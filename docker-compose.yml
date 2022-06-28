@@ -1,0 +1,70 @@
+version: '3'
+
+services:
+
+  #PHP Service
+  php:
+    build: ./docker
+    container_name: php
+    restart: unless-stopped
+    volumes:
+    - ./auto_import/:/var/www/
+    networks:
+      - app-network
+
+
+  #Nginx Service
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+      - "443:443"
+    volumes:
+      - ./auto_import/:/var/www/
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL Service
+  db:
+    image: mysql:5.7.22
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - "4022:3306"
+    environment:
+      MYSQL_DATABASE: parser_laravel
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_USER: user_1
+      MYSQL_PASSWORD: qwerty
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma
+    links:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - 8081:80
+    networks:
+      - app-network
+
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
